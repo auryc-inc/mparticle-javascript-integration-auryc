@@ -1,35 +1,55 @@
-/*
-The 'mParticleUser' is an object with methods get user Identities and set/get user attributes
-Partners can determine what userIds are available to use in their SDK
-Call mParticleUser.getUserIdentities() to return an object of userIdentities --> { userIdentities: {customerid: '1234', email: 'email@gmail.com'} }
-For more identity types, see http://docs.mparticle.com/developers/sdk/javascript/identity#allowed-identity-types
-Call mParticleUser.getMPID() to get mParticle ID
-For any additional methods, see http://docs.mparticle.com/developers/sdk/javascript/apidocs/classes/mParticle.Identity.getCurrentUser().html
-*/
-
-/*
-identityApiRequest has the schema:
-{
-  userIdentities: {
-    customerid: '123',
-    email: 'abc'
-  }
-}
-For more userIdentity types, see http://docs.mparticle.com/developers/sdk/javascript/identity#allowed-identity-types
-*/
+var helpers = require('./helpers');
 
 function IdentityHandler(common) {
     this.common = common || {};
 }
-IdentityHandler.prototype.onUserIdentified = function(mParticleUser) {};
+
+IdentityHandler.prototype.sendIdentities = function (identities) {
+    if (typeof identities === 'string') {
+        window.auryc.identify(identities);
+        return;
+    }
+    // use customer id first, and then email
+    var id = identities.customerid || identities.email;
+    if (id) {
+        window.auryc.identify(id);
+    }
+
+    var props = {};
+    
+    if (identities.email) {
+        props['email'] = identities.email;
+    }
+    if (identities.customerid) {
+        props['customerid'] = identities.customerid;        
+    }
+    if (identities.MPID) {
+        props['MPID'] = identities.MPID;
+    }
+
+    if (Object.keys(props).length) {
+        window.auryc.addUserProperties(props);
+    }
+};
+
+IdentityHandler.prototype.onUserIdentified = function(mParticleUser) {
+    var identities = helpers.handleIdentity(mParticleUser);
+    this.sendIdentities(identities);
+};
 IdentityHandler.prototype.onIdentifyComplete = function(
     mParticleUser,
     identityApiRequest
-) {};
+) {
+    var identities = helpers.handleIdentity(mParticleUser, identityApiRequest);
+    this.sendIdentities(identities);
+};
 IdentityHandler.prototype.onLoginComplete = function(
     mParticleUser,
     identityApiRequest
-) {};
+) {
+    var identities = helpers.handleIdentity(mParticleUser, identityApiRequest);
+    this.sendIdentities(identities);
+};
 IdentityHandler.prototype.onLogoutComplete = function(
     mParticleUser,
     identityApiRequest
@@ -37,7 +57,10 @@ IdentityHandler.prototype.onLogoutComplete = function(
 IdentityHandler.prototype.onModifyComplete = function(
     mParticleUser,
     identityApiRequest
-) {};
+) {
+    var identities = helpers.handleIdentity(mParticleUser, identityApiRequest);
+    this.sendIdentities(identities);
+};
 
 /*  In previous versions of the mParticle web SDK, setting user identities on
     kits is only reachable via the onSetUserIdentity method below. We recommend
@@ -47,6 +70,7 @@ IdentityHandler.prototype.onSetUserIdentity = function(
     forwarderSettings,
     id,
     type
-) {};
+) {
+};
 
 module.exports = IdentityHandler;

@@ -1,8 +1,20 @@
 window.MockHttpServer = require('./mockhttprequest.js');
 window.Should = require('should');
 require('@mparticle/web-sdk');
-mParticle.addForwarder = function (forwarder) {
-    mParticle.forwarder = new forwarder.constructor();
+window.mParticle.addForwarder = function(forwarder) {
+    window.mParticle.forwarder = new forwarder.constructor();
 };
+
+window.getCurrentUser = function() {
+    return currentUser();
+};
+
+function currentUser() {
+    return {
+        getMPID: function() {
+            return 123;
+        },
+    };
+}
 require('../../node_modules/@mparticle/web-kit-wrapper/index.js');
 require('../tests.js');

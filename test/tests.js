@@ -1,5 +1,5 @@
 /* eslint-disable no-undef*/
-describe('XYZ Forwarder', function () {
+describe('Auryc Forwarder', function () {
     // -------------------DO NOT EDIT ANYTHING BELOW THIS LINE-----------------------
     var MessageType = {
             SessionStart: 1,
@@ -26,6 +26,21 @@ describe('XYZ Forwarder', function () {
             getName: function() {
                 return 'blahblah';
             }
+        },
+        CommerceEventType = {
+            ProductAddToCart: 10,
+            ProductRemoveFromCart: 11,
+            ProductCheckout: 12,
+            ProductCheckoutOption: 13,
+            ProductClick: 14,
+            ProductViewDetail: 15,
+            ProductPurchase: 16,
+            ProductRefund: 17,
+            PromotionView: 18,
+            PromotionClick: 19,
+            ProductAddToWishlist: 20,
+            ProductRemoveFromWishlist: 21,
+            ProductImpression: 22
         },
         ProductActionType = {
             Unknown: 0,
@@ -84,42 +99,30 @@ describe('XYZ Forwarder', function () {
         }
     };
 // -------------------START EDITING BELOW:-----------------------
-    var MockXYZForwarder = function() {
+    var MockAurycForwarder = function() {
         var self = this;
 
         // create properties for each type of event you want tracked, see below for examples
         this.trackCustomEventCalled = false;
-        this.logPurchaseEventCalled = false;
-        this.initializeCalled = false;
 
-        this.trackCustomName = null;
-        this.logPurchaseName = null;
-        this.apiKey = null;
-        this.appId = null;
-        this.userId = null;
+        this.siteId = null;
         this.userAttributes = {};
         this.userIdField = null;
 
         this.eventProperties = [];
-        this.purchaseEventProperties = [];
+        this.events = [];
 
-        // stub your different methods to ensure they are being called properly
-        this.initialize = function(appId, apiKey) {
-            self.initializeCalled = true;
-            self.apiKey = apiKey;
-            self.appId = appId;
-        };
-
-        this.stubbedTrackingMethod = function(name, eventProperties){
+        this.track = function(name, eventProperties){
             self.trackCustomEventCalled = true;
-            self.trackCustomName = name;
-            self.eventProperties.push(eventProperties);
+            self.events.push({
+                name: name,
+                properties: eventProperties
+            });
             // Return true to indicate event should be reported
             return true;
         };
 
-        this.stubbedUserAttributeSettingMethod = function(userAttributes) {
-            self.userId = id;
+        this.addUserProperties = function(userAttributes) {
             userAttributes = userAttributes || {};
             if (Object.keys(userAttributes).length) {
                 for (var key in userAttributes) {
@@ -133,22 +136,20 @@ describe('XYZ Forwarder', function () {
             }
         };
 
-        this.stubbedUserLoginMethod = function(id) {
+        this.identify = function(id) {
             self.userId = id;
         };
     };
 
     before(function () {
-
+        mParticle.init('fake-api-key', {workspaceToken: 'faketoken', requestConfig: false});
     });
 
     beforeEach(function() {
-        window.MockXYZForwarder = new MockXYZForwarder();
+        window.auryc = new MockAurycForwarder();
         // Include any specific settings that is required for initializing your SDK here
         var sdkSettings = {
-            clientKey: '123456',
-            appId: 'abcde',
-            userIdField: 'customerId'
+            siteId: '123-examplecom'
         };
         // You may require userAttributes or userIdentities to be passed into initialization
         var userAttributes = {
@@ -168,109 +169,177 @@ describe('XYZ Forwarder', function () {
     });
 
     it('should log event', function(done) {
-        // mParticle.forwarder.process({
-        //     EventDataType: MessageType.PageEvent,
-        //     EventName: 'Test Event',
-        //     EventAttributes: {
-        //         label: 'label',
-        //         value: 200,
-        //         category: 'category'
-        //     }
-        // });
-        
-        // window.MockXYZForwarder.eventProperties[0].label.should.equal('label');
-        // window.MockXYZForwarder.eventProperties[0].value.should.equal(200);
+        mParticle.forwarder.process({
+            EventDataType: MessageType.PageEvent,
+            EventName: 'Test Event 123',
+            EventAttributes: {
+                label: 'label',
+                value: 200,
+                category: 'category'
+            }
+        });
+
+        window.auryc.trackCustomEventCalled.should.equal(true);
+        window.auryc.events.length.should.equal(1);
+        window.auryc.events[0].name.should.equal('Test Event 123');
+        window.auryc.events[0].properties.label.should.equal('label');
+        window.auryc.events[0].properties.value.should.equal(200);
+        window.auryc.events[0].properties.category.should.equal('category');
 
         done();
     });
+
 
     it('should log page view', function(done) {
-        // mParticle.forwarder.process({
-        //     EventDataType: MessageType.PageView,
-        //     EventName: 'test name',
-        //     EventAttributes: {
-        //         attr1: 'test1',
-        //         attr2: 'test2'
-        //     }
-        // });
-        //
-        // window.MockXYZForwarder.trackCustomEventCalled.should.equal(true);
-        // window.MockXYZForwarder.trackCustomName.should.equal('test name');
-        // window.MockXYZForwarder.eventProperties[0].attr1.should.equal('test1');
-        // window.MockXYZForwarder.eventProperties[0].attr2.should.equal('test2');
+        mParticle.forwarder.process({
+            EventDataType: MessageType.PageView,
+            EventName: 'test name',
+            EventAttributes: {
+                attr1: 'test1',
+                attr2: 'test2'
+            }
+        });
+
+
+        window.auryc.trackCustomEventCalled.should.equal(true);
+        window.auryc.events.length.should.equal(1);
+        window.auryc.events[0].name.should.equal('test name');
+        window.auryc.events[0].properties.attr1.should.equal('test1');
+        window.auryc.events[0].properties.attr2.should.equal('test2');
+        window.auryc.events[0].properties['mParticleEventType'].should.equal('PageView');
 
         done();
     });
 
+    it('should log event with identity and user attributes', function(done) {
+        mParticle.forwarder.process({
+            EventDataType: MessageType.PageEvent,
+            EventName: 'Test Event 123',
+            EventAttributes: {
+                label: 'label',
+                value: 200,
+                category: 'category'
+            },
+            UserAttributes: {
+                userAttr1: 'value1', 
+                userAttr2: 'value2'
+            },
+            UserIdentities: [
+                {Identity: 'email@gmail.com', Type: 7}
+            ]
+        });
+
+        window.auryc.trackCustomEventCalled.should.equal(true);
+        window.auryc.events.length.should.equal(1);
+        window.auryc.events[0].name.should.equal('Test Event 123');
+        window.auryc.events[0].properties.label.should.equal('label');
+        window.auryc.events[0].properties.value.should.equal(200);
+        window.auryc.events[0].properties.category.should.equal('category');
+
+        window.auryc.userId.should.equal('email@gmail.com');
+        window.auryc.userAttributes.userAttr1.should.equal('value1');
+        window.auryc.userAttributes.userAttr2.should.equal('value2');
+
+        done();
+    });
+   
     it('should log a product purchase commerce event', function(done) {
-        // mParticle.forwarder.process({
-        //     EventName: 'Test Purchase Event',
-        //     EventDataType: MessageType.Commerce,
-        //     EventCategory: EventType.ProductPurchase,
-        //     ProductAction: {
-        //         ProductActionType: ProductActionType.Purchase,
-        //         ProductList: [
-        //             {
-        //                 Sku: '12345',
-        //                 Name: 'iPhone 6',
-        //                 Category: 'Phones',
-        //                 Brand: 'iPhone',
-        //                 Variant: '6',
-        //                 Price: 400,
-        //                 TotalAmount: 400,
-        //                 CouponCode: 'coupon-code',
-        //                 Quantity: 1
-        //             }
-        //         ],
-        //         TransactionId: 123,
-        //         Affiliation: 'my-affiliation',
-        //         TotalAmount: 450,
-        //         TaxAmount: 40,
-        //         ShippingAmount: 10,
-        //         CouponCode: null
-        //     }
-        // });
-        //
-        // window.MockXYZForwarder.trackCustomEventCalled.should.equal(true);
-        // window.MockXYZForwarder.trackCustomName.should.equal('Purchase');
-        //
-        // window.MockXYZForwarder.eventProperties[0].Sku.should.equal('12345');
-        // window.MockXYZForwarder.eventProperties[0].Name.should.equal('iPhone 6');
-        // window.MockXYZForwarder.eventProperties[0].Category.should.equal('Phones');
-        // window.MockXYZForwarder.eventProperties[0].Brand.should.equal('iPhone');
-        // window.MockXYZForwarder.eventProperties[0].Variant.should.equal('6');
-        // window.MockXYZForwarder.eventProperties[0].Price.should.equal(400);
-        // window.MockXYZForwarder.eventProperties[0].TotalAmount.should.equal(400);
-        // window.MockXYZForwarder.eventProperties[0].CouponCode.should.equal('coupon-code');
-        // window.MockXYZForwarder.eventProperties[0].Quantity.should.equal(1);
+        mParticle.forwarder.process({
+            EventName: 'eCommerce - Purchase',
+            EventDataType: MessageType.Commerce,
+            EventCategory: CommerceEventType.ProductPurchase,
+            ProductAction: {
+                ProductActionType: ProductActionType.Purchase,
+                ProductList: [
+                    {
+                        Sku: '12345',
+                        Name: 'iPhone 6',
+                        Category: 'Phones',
+                        Brand: 'iPhone',
+                        Variant: '6',
+                        Price: 400,
+                        TotalAmount: 400,
+                        CouponCode: 'coupon-code',
+                        Quantity: 1
+                    }
+                ],
+                TransactionId: 123,
+                Affiliation: 'my-affiliation',
+                TotalAmount: 450,
+                TaxAmount: 40,
+                ShippingAmount: 10,
+                CouponCode: null
+            }
+        });
+
+        window.auryc.trackCustomEventCalled.should.equal(true);
+        window.auryc.events.length.should.equal(2);
+        
+        var totalEvent = window.auryc.events[0];
+        totalEvent.name.should.equal('eCommerce - purchase - Total');
+
+        var properties = totalEvent.properties;
+        properties['auryc_integration'].should.equal('mParticle');
+        properties.Affiliation.should.equal('my-affiliation');
+        properties['Product Count'].should.equal(1);
+        properties['Shipping Amount'].should.equal(10);
+        properties['Tax Amount'].should.equal(40);
+        properties['Total Amount'].should.equal(450);
+        properties['Transaction Id'].should.equal(123);
+        properties['mParticleEventType'].should.equal('eCommerce');
+
+        var itemEvent = window.auryc.events[1];
+        itemEvent.name.should.equal('eCommerce - purchase - Item');
+        properties['auryc_integration'].should.equal('mParticle');
+        properties = itemEvent.properties;
+        properties.Brand.should.equal('iPhone');
+        properties.Category.should.equal('Phones');
+        properties['Coupon Code'].should.equal('coupon-code');
+        properties['Item Price'].should.equal(400);
+        properties.Quantity.should.equal(1);
+        properties.Name.should.equal('iPhone 6');
+        properties['Total Product Amount'].should.equal(400);
+        properties.Variant.should.equal('6');
+        properties['mParticleEventType'].should.equal('eCommerce');
 
         done();
     });
 
     it('should set customer id user identity on user identity change', function(done) {
-        // var fakeUserStub = {
-        //     getUserIdentities: function() {
-        //         return {
-        //             userIdentities: {
-        //                 customerid: '123'
-        //             }
-        //         };
-        //     },
-        //     getMPID: function() {
-        //         return 'testMPID';
-        //     },
-        //     setUserAttribute: function() {
-        //
-        //     },
-        //     removeUserAttribute: function() {
-        //
-        //     }
-        // };
-        //
-        // mParticle.forwarder.onUserIdentified(fakeUserStub);
-        //
-        // window.MockXYZForwarder.userId.should.equal('123');
+        var fakeUserStub = {
+            getUserIdentities: function() {
+                return {
+                    userIdentities: {
+                        customerid: '123',
+                        email: 'test@example.com'
+                    }
+                };
+            },
+            getMPID: function() {
+                return 'testMPID';
+            },
+            setUserAttribute: function() {
+        
+            },
+            removeUserAttribute: function() {
+        
+            }
+        };
+        
+        mParticle.forwarder.onUserIdentified(fakeUserStub);
+        
+        window.auryc.userId.should.equal('123');
+        window.auryc.userAttributes['email'].should.equal('test@example.com');
+        window.auryc.userAttributes['customerid'].should.equal('123');
+        window.auryc.userAttributes['MPID'].should.equal('testMPID');
 
+        done();
+    });
+
+    it('should set and remove user attributes properly', function(done) {
+
+        mParticle.forwarder.setUserAttribute('key', 'value');       
+        window.auryc.userAttributes['key'].should.equal('value');        
         done();
     });
 });

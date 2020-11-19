@@ -1,5 +1,5 @@
 {
-  "name": "integration-nameOfYourIntegration",
+  "name": "integration-auryc",
   "version": "1.0.2",
   "scripts": {
     "testKarma": "node test/boilerplate/test-karma.js",
@@ -28,6 +28,8 @@
     "watchify": "^3.11.0"
   },
   "dependencies": {
-    "@mparticle/web-sdk": "^2.11.3"
+    "@mparticle/web-sdk": "^2.11.3",
+    "@ndhoule/extend": "^2.0.0",
+    "is": "^3.3.0"
   }
 }
