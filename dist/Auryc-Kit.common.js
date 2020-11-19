@@ -1004,7 +1004,7 @@ function handleEvent (event, eventType) {
     }
     props['auryc_integration'] = 'mParticle';
     if (eventType) {
-        props['mParticleEventType'] = eventType;
+        props['mParticle_eventType'] = eventType;
     }
     window.auryc.track(eName, props);
 
@@ -1108,7 +1108,7 @@ function EventHandler(common) {
     this.common = common || {};
 }
 EventHandler.prototype.logEvent = function(event) {
-    helpers_1.handleEvent(event);
+    helpers_1.handleEvent(event, 'PageEvent');
 };
 EventHandler.prototype.logError = function(event) {
     helpers_1.handleEvent(event, 'Error');

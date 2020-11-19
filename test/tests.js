@@ -185,6 +185,8 @@ describe('Auryc Forwarder', function () {
         window.auryc.events[0].properties.label.should.equal('label');
         window.auryc.events[0].properties.value.should.equal(200);
         window.auryc.events[0].properties.category.should.equal('category');
+        window.auryc.events[0].properties['mParticle_eventType'].should.equal('PageEvent');
+
 
         done();
     });
@@ -206,7 +208,7 @@ describe('Auryc Forwarder', function () {
         window.auryc.events[0].name.should.equal('test name');
         window.auryc.events[0].properties.attr1.should.equal('test1');
         window.auryc.events[0].properties.attr2.should.equal('test2');
-        window.auryc.events[0].properties['mParticleEventType'].should.equal('PageView');
+        window.auryc.events[0].properties['mParticle_eventType'].should.equal('PageView');
 
         done();
     });
@@ -286,7 +288,7 @@ describe('Auryc Forwarder', function () {
         properties['Tax Amount'].should.equal(40);
         properties['Total Amount'].should.equal(450);
         properties['Transaction Id'].should.equal(123);
-        properties['mParticleEventType'].should.equal('eCommerce');
+        properties['mParticle_eventType'].should.equal('eCommerce');
 
         var itemEvent = window.auryc.events[1];
         itemEvent.name.should.equal('eCommerce - purchase - Item');
@@ -300,7 +302,7 @@ describe('Auryc Forwarder', function () {
         properties.Name.should.equal('iPhone 6');
         properties['Total Product Amount'].should.equal(400);
         properties.Variant.should.equal('6');
-        properties['mParticleEventType'].should.equal('eCommerce');
+        properties['mParticle_eventType'].should.equal('eCommerce');
 
         done();
     });

@@ -5,7 +5,7 @@ function EventHandler(common) {
     this.common = common || {};
 }
 EventHandler.prototype.logEvent = function(event) {
-    helpers.handleEvent(event);
+    helpers.handleEvent(event, 'PageEvent');
 };
 EventHandler.prototype.logError = function(event) {
     helpers.handleEvent(event, 'Error');

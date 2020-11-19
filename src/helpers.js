@@ -139,7 +139,7 @@ function handleEvent (event, eventType) {
     }
     props['auryc_integration'] = 'mParticle';
     if (eventType) {
-        props['mParticleEventType'] = eventType;
+        props['mParticle_eventType'] = eventType;
     }
     window.auryc.track(eName, props);
 
